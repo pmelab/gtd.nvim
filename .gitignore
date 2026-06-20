@@ -1,0 +1,26 @@
+# Neovim swap/backup/undo files
+*.swp
+*.swo
+*~
+.*.swp
+
+# Neovim shada/session
+*.shada
+Session.vim
+
+# Lua compiled
+*.lua~
+luac.out
+
+# Test output
+tests/output/
+tests/*.log
+mini_test_output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor config (local overrides)
+.nvim.lua
+.exrc
