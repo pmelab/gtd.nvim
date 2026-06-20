@@ -26,16 +26,22 @@ function M.setup(opts)
   end
 end
 
---- Returns a statusline string (placeholder).
+--- Returns a statusline string: "? N" for N>0, "" for N==0 or no TODO.md.
+--- Reads the cache — cheap to call on every redraw.
 --- @return string
 function M.statusline()
-  return ""
+  local count = M.open_questions_count()
+  if count == 0 then
+    return ""
+  end
+  return "? " .. count
 end
 
---- Returns the number of open questions (placeholder).
---- @return number
+--- Returns the cached count of unanswered open questions (recomputes if not cached).
+--- @return integer
 function M.open_questions_count()
-  return 0
+  local todo = require("gtd.todo")
+  return todo.count_open_questions()
 end
 
 return M
