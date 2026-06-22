@@ -62,7 +62,7 @@ T["lazy_keys returns a table with 2 entries"] = function()
   gtd.setup({})
   local spec = gtd.lazy_keys()
   MiniTest.expect.equality(type(spec), "table")
-  MiniTest.expect.equality(#spec, 2)
+  MiniTest.expect.equality(#spec, 3)
 end
 
 T["setup_buffer_keymaps attaches gd in REVIEW.md"] = function()

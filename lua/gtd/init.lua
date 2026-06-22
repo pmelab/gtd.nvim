@@ -7,6 +7,7 @@ local defaults = {
     jump_to_hunk = "gd",
     toggle_done = "<leader>gc",
     toggle_done_cr = "<cr>",
+    copy_location = "<leader>gy",
   },
 }
 
@@ -93,6 +94,23 @@ function M.setup_autocmds()
   end
 end
 
+--- Copy current buffer path:line to the system clipboard.
+--- Returns the copied string, or nil if the buffer has no file name.
+function M.copy_location()
+  local name = vim.api.nvim_buf_get_name(0)
+  if name == "" then
+    vim.notify("gtd: no file — nothing copied", vim.log.levels.WARN)
+    return nil
+  end
+  local path = vim.fn.fnamemodify(name, ":.")
+  local line = vim.api.nvim_win_get_cursor(0)[1]
+  local text = path .. ":" .. line
+  vim.fn.setreg("+", text)
+  vim.fn.setreg('"', text)
+  vim.notify("gtd: copied " .. text)
+  return text
+end
+
 --- Register optional icon/which-key integration.
 function M.register_icons()
   -- mini.icons: register a custom icon for gtd group
@@ -137,6 +155,10 @@ function M.setup(opts)
     require("gtd.review").pick_chunks()
   end, { desc = "gtd: pick review chunks" })
 
+  vim.keymap.set("n", keys.copy_location, function()
+    M.copy_location()
+  end, { desc = "gtd: copy file:line to clipboard" })
+
   -- Autocmds
   M.setup_autocmds()
 
@@ -159,6 +181,7 @@ function M.lazy_keys()
   return {
     { keys.pick_open_questions, function() require("gtd.todo").pick_open_questions() end, desc = "gtd: pick open questions" },
     { keys.pick_chunks, function() require("gtd.review").pick_chunks() end, desc = "gtd: pick review chunks" },
+    { keys.copy_location, function() require("gtd").copy_location() end, desc = "gtd: copy file:line to clipboard" },
   }
 end
 

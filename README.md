@@ -29,6 +29,7 @@ With key overrides:
       jump_to_hunk        = "gd",          -- REVIEW.md buffer-local
       toggle_done         = "<leader>gc",  -- REVIEW.md buffer-local
       toggle_done_cr      = "<cr>",        -- REVIEW.md buffer-local
+      copy_location       = "<leader>gy",  -- global: copy file:line to clipboard
     },
   },
   -- Optionally declare keys for lazy.nvim lazy-loading:
@@ -58,6 +59,7 @@ require("gtd").setup({
 | Toggle checkbox | Toggle `- [ ]` / `- [x]` on a hunk line and write the file |
 | Auto-refresh | Count refreshed on `BufWritePost TODO.md`, `FocusGained`, and every 5 minutes |
 | Optional integrations | `mini.icons` and `which-key` registered when present (no hard dependency) |
+| Copy file location | Copies `path:line` of the cursor to the system clipboard for pasting into an AI agent |
 
 ## Keymaps
 
@@ -65,6 +67,7 @@ require("gtd").setup({
 |---|---|---|
 | `<leader>gq` | global | Pick open question and jump to it |
 | `<leader>gp` | global | Pick review chunk and jump to it |
+| `<leader>gy` | global | Copy current `file:line` to system clipboard |
 | `gd` | `REVIEW.md` | Jump to hunk under cursor in source file |
 | `<leader>gc` | `REVIEW.md` | Toggle checkbox done on hunk under cursor |
 | `<cr>` | `REVIEW.md` | Toggle checkbox done on hunk under cursor |
