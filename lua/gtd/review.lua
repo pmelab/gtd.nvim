@@ -99,6 +99,12 @@ function M.open_file_diff(hunk, base)
     return
   end
 
+  -- Set gitsigns base before opening the file so it's in place when gitsigns attaches.
+  local ok, gs = pcall(require, "gitsigns")
+  if ok and gs.change_base then
+    gs.change_base(base, true)
+  end
+
   local abs_path = root .. "/" .. hunk.path
   vim.cmd("edit " .. vim.fn.fnameescape(abs_path))
 
@@ -107,12 +113,6 @@ function M.open_file_diff(hunk, base)
   local lnum = math.min(hunk.lnum, line_count)
   if lnum >= 1 then
     pcall(vim.api.nvim_win_set_cursor, 0, { lnum, 0 })
-  end
-
-  -- set gitsigns base (gracefully skip if not installed)
-  local ok, gs = pcall(require, "gitsigns")
-  if ok and gs.change_base then
-    gs.change_base(base, true)
   end
 end
 
