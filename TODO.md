@@ -29,7 +29,7 @@ Proposed default: **`<leader>k` == "do what `gd` does, then auto-pop the
 gitsigns hunk preview float".** Accept (you end up in the file, with the diff
 float open), or specify a different model:
 
-<!-- user answers here -->
+agreed
 
 ### Q10 — How is `<leader>k` different from `gd`?
 
@@ -43,7 +43,7 @@ is "`gd` with the diff already shown". Confirm this is a useful enough
 distinction, or redirect (e.g. drop the feature, or revisit the
 self-contained-float option i):
 
-<!-- user answers here -->
+i was hoping that <leader>k does not switch to a different buffer, but remains in REVIEW.md
 
 ### Q11 — Reuse `gd`'s global base mutation?
 
@@ -55,7 +55,7 @@ keep mutating the global base for the preview too?
 Proposed default: **yes — reuse `open_file_diff` as-is, accept the same global
 base mutation `gd` already performs.** Confirm or request a scoped base:
 
-<!-- user answers here -->
+yes
 
 ### Q12 — Line not inside a gitsigns-tracked hunk
 
@@ -66,7 +66,7 @@ or pre-check in gtd?
 Proposed default: **let gitsigns notify** (no gtd pre-check; gitsigns' own "no
 current hunk" message is adequate). Confirm or request a gtd pre-check:
 
-<!-- user answers here -->
+agreed
 
 ## Plan body
 
