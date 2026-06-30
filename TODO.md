@@ -5,22 +5,7 @@
 > i would like to be able to open hunks referenced in REVIEW.md in a quick
 > preview somehow. ideally with <leader>k
 
-## Open questions
-
-Answer inline under each marker. The plan body below resolves each with a stated
-default; confirming or changing it reshapes the plan.
-
-### Q13 — Which hunk(s) does the float show?
-
-A REVIEW.md hunk line is a single anchor `path#lnum`, but
-`git diff <base> -- <path>` may emit MULTIPLE `@@` hunks for that file. Proposed
-default: **show only the one diff hunk whose new-side range contains `lnum`**
-(the line you anchored on), not the whole file's diff. The float also INCLUDES
-the `@@ ... @@` header line (kept, not stripped) so the diff is well-formed and
-`filetype=diff` highlights it correctly. Confirm, or request "show the whole
-file's diff vs base" / "strip the @@ header":
-
-agreed
+no open questions — run gtd to plan
 
 ## Plan body
 
@@ -193,3 +178,8 @@ SHA is only read (via `get_base`) and passed to `git diff`.
 **Answer:** gtd handles no-hunk-at-line itself: when `git.diff_hunk` finds no
 hunk covering `lnum`, gtd notifies "no changes at this line vs review base" and
 opens no float. (Formerly "let gitsigns notify" — moot, gitsigns is not used.)
+
+### Q13 — Which hunk(s) does the float show?
+
+**Answer:** agreed — show only the single hunk whose new-side range contains
+lnum; keep the @@ header.
