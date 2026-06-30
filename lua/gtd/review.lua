@@ -2,6 +2,8 @@ local M = {}
 
 local git = require("gtd.git")
 
+local preview_win = nil
+
 --- Parse a single checkbox hunk line.
 --- @param line string
 --- @return { path: string, lnum: number, done: boolean }|nil
@@ -228,6 +230,89 @@ function M.jump_to_hunk_under_cursor()
   end
 
   M.open_file_diff(hunk, base)
+end
+
+--- Show a cursor-anchored float with the diff hunk for the line under the cursor.
+--- Does NOT move the cursor out of REVIEW.md.
+function M.preview_hunk_under_cursor()
+  local buf = vim.api.nvim_get_current_buf()
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  local line = vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
+
+  local hunk = M.parse_hunk_line(line)
+  if not hunk then
+    vim.notify("gtd: no hunk on current line", vim.log.levels.WARN)
+    return
+  end
+
+  local review_path = git.get_review_path()
+  local base = review_path and git.get_base(review_path)
+  if not base then
+    vim.notify("gtd: could not resolve review base", vim.log.levels.ERROR)
+    return
+  end
+
+  local root = git.get_root()
+  local lines = git.diff_hunk(hunk.path, base, hunk.lnum, root)
+  if not lines or #lines == 0 then
+    vim.notify("gtd: no changes at this line vs review base", vim.log.levels.INFO)
+    return
+  end
+
+  -- Close existing preview float if any.
+  if preview_win and vim.api.nvim_win_is_valid(preview_win) then
+    pcall(vim.api.nvim_win_close, preview_win, true)
+  end
+  preview_win = nil
+
+  -- Build scratch buffer.
+  local pbuf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(pbuf, 0, -1, false, lines)
+  vim.bo[pbuf].buftype = "nofile"
+  vim.bo[pbuf].bufhidden = "wipe"
+  vim.bo[pbuf].filetype = "diff"
+  vim.bo[pbuf].modifiable = false
+
+  -- Compute dimensions.
+  local max_len = 1
+  for _, l in ipairs(lines) do
+    if #l > max_len then max_len = #l end
+  end
+  local width = math.min(100, math.max(1, max_len))
+  local height = math.min(20, #lines)
+
+  -- Open cursor-anchored float without entering it.
+  preview_win = vim.api.nvim_open_win(pbuf, false, {
+    relative = "cursor",
+    row = 1,
+    col = 0,
+    width = width,
+    height = height,
+    border = "rounded",
+    style = "minimal",
+  })
+
+  -- Dismiss on cursor move in REVIEW.md.
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    buffer = buf,
+    once = true,
+    callback = function()
+      if preview_win and vim.api.nvim_win_is_valid(preview_win) then
+        pcall(vim.api.nvim_win_close, preview_win, true)
+      end
+      preview_win = nil
+    end,
+  })
+
+  -- q and <Esc> in the float close it.
+  local close_float = function()
+    if preview_win and vim.api.nvim_win_is_valid(preview_win) then
+      pcall(vim.api.nvim_win_close, preview_win, true)
+    end
+    preview_win = nil
+  end
+  vim.keymap.set("n", "q", close_float, { buffer = pbuf, nowait = true })
+  vim.keymap.set("n", "<Esc>", close_float, { buffer = pbuf, nowait = true })
 end
 
 return M
