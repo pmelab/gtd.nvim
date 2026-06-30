@@ -29,7 +29,7 @@ range). So the preview content must be reconstructed from one of:
 Which? (Plan body assumes **(a) git diff vs review base**, the highest-value
 interpretation of "hunks".)
 
-<!-- user answers here -->
+b
 
 ### Q2 — Presentation and dismissal
 
@@ -45,7 +45,7 @@ height (~20 lines) and max width (~100 cols), closed on the next CursorMoved in
 REVIEW.md or by `q`/`<Esc>` when focus is in the float**. Repeated `<leader>k`
 re-opens for the new line.)
 
-<!-- user answers here -->
+agreed
 
 ### Q3 — Implementation dependency
 
@@ -60,7 +60,7 @@ REVIEW.md — so delegating would require first opening the file (defeating the
 Self-contained, or insist on gitsigns? (Plan body assumes **self-contained**,
 keeping gitsigns soft-optional as today.)
 
-<!-- user answers here -->
+use gitsigns
 
 ### Q4 — Cursor on a `## chunk` heading
 
@@ -69,7 +69,7 @@ hunk line: **no-op with a notify**, or **preview all hunks in that chunk**
 (concatenated in the float)? (Plan body assumes **no-op + gentle notify**,
 mirroring `gd`'s "no hunk on current line" behaviour.)
 
-<!-- user answers here -->
+agreed
 
 ### Q5 — Syntax highlighting in the preview buffer
 
@@ -78,7 +78,7 @@ set it to the _source file's_ filetype (via `vim.filetype.match`) so it
 highlights as code. Confirm the highlighting choice for the selected content
 mode.
 
-<!-- user answers here -->
+agreed
 
 ### Q6 — Config key name
 
@@ -86,7 +86,7 @@ New entry in `defaults.keys`. Proposed name **`preview_hunk = "<leader>k"`**,
 registered **buffer-local in REVIEW.md** (in `M.setup_buffer_keymaps`, beside
 `jump_to_hunk`). Confirm the name and that it should NOT also be a global map.
 
-<!-- user answers here -->
+agreed
 
 ## Plan body
 
