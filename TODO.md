@@ -49,7 +49,7 @@ only option that satisfies both Q1=b and the "quick / non-disruptive preview"
 intent of the request, treating "use gitsigns" as not applicable to a
 content-only preview. Confirm (i), or redirect to (ii)/(iii):
 
-<!-- user answers here -->
+ii
 
 ### Q8 — Anchor-line edge cases (Q1=b specifics)
 
@@ -66,7 +66,7 @@ body unless you change them here):
 
 Accept these defaults, or change any:
 
-<!-- user answers here -->
+agreed
 
 ## Plan body
 
