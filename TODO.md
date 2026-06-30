@@ -20,7 +20,7 @@ the `@@ ... @@` header line (kept, not stripped) so the diff is well-formed and
 `filetype=diff` highlights it correctly. Confirm, or request "show the whole
 file's diff vs base" / "strip the @@ header":
 
-<!-- user answers here -->
+agreed
 
 ## Plan body
 
