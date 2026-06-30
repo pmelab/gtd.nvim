@@ -1,0 +1,5 @@
+# gtd configuration for gtd.nvim (a Neovim plugin — no package.json).
+# Tests run headlessly via tests/run.sh (mini.test). MiniTest's `+qa` always
+# exits 0, so gate the result on the reporter's "Fails (0)" summary line while
+# still emitting full output (to stderr) for FEEDBACK.md on a red run.
+testCommand: bash tests/run.sh 2>&1 | tee /dev/stderr | grep -q "Fails (0)"
