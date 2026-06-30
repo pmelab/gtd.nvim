@@ -78,4 +78,95 @@ T["get_todo_path returns nil when not in a repo"] = function()
   MiniTest.expect.equality(result, nil)
 end
 
+-- ── diff_hunk ────────────────────────────────────────────────────────────────
+
+local CANNED_DIFF = table.concat({
+  "diff --git a/foo.lua b/foo.lua",
+  "index 1111111..2222222 100644",
+  "--- a/foo.lua",
+  "+++ b/foo.lua",
+  "@@ -1,3 +1,4 @@",
+  " line one",
+  "+added line",
+  " line two",
+  " line three",
+  "@@ -10,2 +11,3 @@",
+  " ten",
+  "+eleven",
+  " twelve",
+}, "\n")
+
+T["diff_hunk returns first hunk when lnum is in first hunk range"] = function()
+  local orig = git.git_command
+  git.git_command = function(_, _) return CANNED_DIFF, 0 end
+  local ok, result = pcall(function()
+    return git.diff_hunk("foo.lua", "deadbeef", 2, "/fake/root")
+  end)
+  git.git_command = orig
+  assert(ok, tostring(result))
+  MiniTest.expect.no_equality(result, nil)
+  MiniTest.expect.equality(result[1], "@@ -1,3 +1,4 @@")
+  local found_added = false
+  local found_eleven = false
+  for _, line in ipairs(result) do
+    if line == "+added line" then found_added = true end
+    if line == "+eleven" then found_eleven = true end
+  end
+  assert(found_added, "expected '+added line' in first hunk")
+  assert(not found_eleven, "first hunk should NOT contain '+eleven'")
+end
+
+T["diff_hunk returns second hunk when lnum is in second hunk range"] = function()
+  local orig = git.git_command
+  git.git_command = function(_, _) return CANNED_DIFF, 0 end
+  local ok, result = pcall(function()
+    return git.diff_hunk("foo.lua", "deadbeef", 12, "/fake/root")
+  end)
+  git.git_command = orig
+  assert(ok, tostring(result))
+  MiniTest.expect.no_equality(result, nil)
+  MiniTest.expect.equality(result[1], "@@ -10,2 +11,3 @@")
+  local found_eleven = false
+  local found_added = false
+  for _, line in ipairs(result) do
+    if line == "+eleven" then found_eleven = true end
+    if line == "+added line" then found_added = true end
+  end
+  assert(found_eleven, "expected '+eleven' in second hunk")
+  assert(not found_added, "second hunk should NOT contain '+added line'")
+end
+
+T["diff_hunk returns nil when lnum is out of range"] = function()
+  local orig = git.git_command
+  git.git_command = function(_, _) return CANNED_DIFF, 0 end
+  local ok, result = pcall(function()
+    return git.diff_hunk("foo.lua", "deadbeef", 100, "/fake/root")
+  end)
+  git.git_command = orig
+  assert(ok, tostring(result))
+  MiniTest.expect.equality(result, nil)
+end
+
+T["diff_hunk returns nil when git exits with non-zero code"] = function()
+  local orig = git.git_command
+  git.git_command = function(_, _) return "", 1 end
+  local ok, result = pcall(function()
+    return git.diff_hunk("foo.lua", "deadbeef", 2, "/fake/root")
+  end)
+  git.git_command = orig
+  assert(ok, tostring(result))
+  MiniTest.expect.equality(result, nil)
+end
+
+T["diff_hunk returns nil when diff output is empty"] = function()
+  local orig = git.git_command
+  git.git_command = function(_, _) return "", 0 end
+  local ok, result = pcall(function()
+    return git.diff_hunk("foo.lua", "deadbeef", 2, "/fake/root")
+  end)
+  git.git_command = orig
+  assert(ok, tostring(result))
+  MiniTest.expect.equality(result, nil)
+end
+
 return T

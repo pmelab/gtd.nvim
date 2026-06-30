@@ -84,4 +84,64 @@ function M.get_base(lines_or_path)
   return nil
 end
 
+--- Return the lines (header + body) of the single diff hunk (vs `base`) whose
+--- new-side range contains `lnum`, or nil if none / git failed / empty diff.
+--- @param path string   root-relative file path
+--- @param base string   review base SHA
+--- @param lnum number    1-based anchor line (new side)
+--- @param root string|nil  optional repo root (defaults to M.get_root())
+--- @return string[]|nil
+function M.diff_hunk(path, base, lnum, root)
+  root = root or M.get_root()
+  if not root then
+    return nil
+  end
+
+  local stdout, code = M.git_command({ "diff", base, "--", path }, { cwd = root })
+  if code ~= 0 or stdout == "" then
+    return nil
+  end
+
+  local lines = vim.split(stdout, "\n")
+  local current_hunk = nil
+  local current_start = nil
+  local current_end = nil  -- exclusive: c + d
+
+  for _, line in ipairs(lines) do
+    local c_str, d_str = line:match("^@@ %-%d+,?%d* %+(%d+),?(%d*) @@")
+    if c_str then
+      -- Check if previous hunk matched
+      if current_hunk and current_start <= lnum and lnum < current_end then
+        return current_hunk
+      end
+      -- Start new hunk
+      local c = tonumber(c_str)
+      local d = (d_str ~= nil and d_str ~= "") and tonumber(d_str) or 1
+      current_hunk = { line }
+      current_start = c
+      current_end = c + d
+    elseif current_hunk then
+      local first = line:sub(1, 1)
+      if first == " " or first == "+" or first == "-" or first == "\\" then
+        table.insert(current_hunk, line)
+      else
+        -- Non-body line outside a hunk header — check match and reset
+        if current_start <= lnum and lnum < current_end then
+          return current_hunk
+        end
+        current_hunk = nil
+        current_start = nil
+        current_end = nil
+      end
+    end
+  end
+
+  -- Check last hunk after EOF
+  if current_hunk and current_start <= lnum and lnum < current_end then
+    return current_hunk
+  end
+
+  return nil
+end
+
 return M
