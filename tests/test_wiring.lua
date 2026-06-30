@@ -98,4 +98,34 @@ T["setup_buffer_keymaps attaches <cr> toggle in REVIEW.md"] = function()
   vim.api.nvim_buf_delete(buf, { force = true })
 end
 
+T["setup registers open_todo global keymap"] = function()
+  local gtd = require("gtd")
+  gtd.setup({})
+  local maps = vim.api.nvim_get_keymap("n")
+  local m = find_by_desc(maps, "gtd: open/refresh TODO.md")
+  MiniTest.expect.no_equality(m, nil)
+end
+
+T["setup registers open_review global keymap"] = function()
+  local gtd = require("gtd")
+  gtd.setup({})
+  local maps = vim.api.nvim_get_keymap("n")
+  local m = find_by_desc(maps, "gtd: open/refresh REVIEW.md")
+  MiniTest.expect.no_equality(m, nil)
+end
+
+T["lazy_keys includes open_todo and open_review entries"] = function()
+  local gtd = require("gtd")
+  gtd.setup({})
+  local spec = gtd.lazy_keys()
+  local function find_lazy_by_desc(entries, desc)
+    for _, e in ipairs(entries) do
+      if e.desc == desc then return e end
+    end
+    return nil
+  end
+  MiniTest.expect.no_equality(find_lazy_by_desc(spec, "gtd: open/refresh TODO.md"), nil)
+  MiniTest.expect.no_equality(find_lazy_by_desc(spec, "gtd: open/refresh REVIEW.md"), nil)
+end
+
 return T
