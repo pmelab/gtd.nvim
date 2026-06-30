@@ -7,109 +7,105 @@
 
 ## Open questions
 
-Answer inline under each marker. The plan body below resolves the conflict with
-a stated default; confirming or changing it reshapes the plan.
+Answer inline under each marker. The plan body below resolves each with a stated
+default; confirming or changing it reshapes the plan. These questions are NEW —
+they arise from choosing the gitsigns-diff approach (Q7=ii), which is inherently
+more involved than the earlier file-content idea.
 
-### Q7 — CONFLICT: "show file content (Q1=b)" vs "use gitsigns (Q3)"
+### Q9 — Disruption model: do we leave REVIEW.md?
 
-You answered Q1=**(b) file content** (preview shows the working-tree file, a
-window of context lines around `hunk.lnum`, anchor line highlighted) AND
-Q3=**use gitsigns**. These are in direct tension and cannot both be honoured as
-literally stated:
+gitsigns' `preview_hunk` previews the hunk under the cursor **in the current
+window's buffer**. It has no path/lnum API, so to preview a `path#lnum` ref from
+REVIEW.md we must actually OPEN that file (set gitsigns base, attach, move
+cursor to `lnum`) and then call `preview_hunk`. The simplest correct flow is: do
+exactly what `gd` does (`open_file_diff`), then immediately pop the gitsigns
+hunk-preview float.
 
-- gitsigns' preview APIs (`preview_hunk`, `preview_hunk_inline`) render the
-  **diff** of a hunk against the gitsigns base. They operate on the
-  **currently-open file buffer at the cursor** — they cannot show plain file
-  content for an arbitrary `path#lnum` reference, and they require the target
-  file to already be the current buffer (i.e. the file must be opened first,
-  with gitsigns attached and `change_base` set — exactly the disruptive flow
-  `open_file_diff` already does for `gd`).
-- So "show file content" (b) and "delegate to gitsigns" cannot coexist in one
-  preview. Confirmed against the source: `review.open_file_diff` /
-  `jump_to_hunk_under_cursor` already `pcall(require, "gitsigns")` +
-  `gs.change_base(base, true)` then `:edit` the file; gitsigns has no
-  content-preview-by-path API.
+That means `<leader>k` LEAVES REVIEW.md (the file becomes the current buffer),
+just like `gd`. Staying in the REVIEW.md window while floating an off-screen
+file's diff is not something gitsigns can do.
 
-Real options:
+Proposed default: **`<leader>k` == "do what `gd` does, then auto-pop the
+gitsigns hunk preview float".** Accept (you end up in the file, with the diff
+float open), or specify a different model:
 
-- **(i) Self-contained file-content float** — honour Q1=b literally. Read the
-  working-tree file (`vim.fn.readfile` / the buffer), show ±N context lines
-  around `lnum` with the anchor highlighted, source-file filetype for syntax.
-  gitsigns is NOT involved in the preview (Q3 treated as not applicable to a
-  content preview). Most "non-disruptive": no file is opened, no base mutation.
-- **(ii) gitsigns diff preview** — reinterpret/override Q1=b. Open & load the
-  target file buffer, set gitsigns base, then call gitsigns' preview. Shows the
-  diff hunk, not file content. Less non-disruptive (opens the file, mutates the
-  gitsigns base globally).
-- **(iii) Hybrid** — e.g. self-contained float that renders a diff computed by
-  gtd itself (no gitsigns), or content-by-default with a toggle to diff.
+<!-- user answers here -->
 
-The plan body below assumes **(i) self-contained file-content float**, as the
-only option that satisfies both Q1=b and the "quick / non-disruptive preview"
-intent of the request, treating "use gitsigns" as not applicable to a
-content-only preview. Confirm (i), or redirect to (ii)/(iii):
+### Q10 — How is `<leader>k` different from `gd`?
 
-ii
+If `<leader>k` opens the file (like `gd`) and additionally pops the gitsigns
+preview float, the only difference from `gd` is the auto-popped float. Is that
+the intended distinction, or did you expect `<leader>k` to be non-disruptive
+(stay in REVIEW.md) — which gitsigns can't deliver for an off-screen file?
 
-### Q8 — Anchor-line edge cases (Q1=b specifics)
+Proposed default: **`<leader>k` = `gd` + auto-popped `preview_hunk` float.** It
+is "`gd` with the diff already shown". Confirm this is a useful enough
+distinction, or redirect (e.g. drop the feature, or revisit the
+self-contained-float option i):
 
-Q1=b opens a few behavioural choices. Proposed defaults (folded into the plan
-body unless you change them here):
+<!-- user answers here -->
 
-- **Context window:** ±10 lines around `lnum` (anchor centred where possible).
-- **Near file start/end:** clamp the window to `[1, line_count]` (still ±10 of
-  total span, anchor not necessarily centred at edges).
-- **File missing / `lnum` out of range:** notify + abort (no float).
-- **Anchor highlight:** highlight the anchor line in the float with a
-  `CursorLine`-like highlight via `nvim_buf_add_highlight` on the line's row in
-  the scratch buffer (computed from where `lnum` lands in the clamped window).
+### Q11 — Reuse `gd`'s global base mutation?
 
-Accept these defaults, or change any:
+`open_file_diff` already calls `gs.change_base(base, true)` — the `true` makes
+the gitsigns base **global** (affects all buffers). `<leader>k` reusing
+`open_file_diff` inherits this side effect (same as `gd` today). Acceptable to
+keep mutating the global base for the preview too?
 
-agreed
+Proposed default: **yes — reuse `open_file_diff` as-is, accept the same global
+base mutation `gd` already performs.** Confirm or request a scoped base:
+
+<!-- user answers here -->
+
+### Q12 — Line not inside a gitsigns-tracked hunk
+
+If `hunk.lnum` is on a line that gitsigns doesn't see as changed vs base,
+`preview_hunk` no-ops / notifies "no current hunk". Let gitsigns handle/notify,
+or pre-check in gtd?
+
+Proposed default: **let gitsigns notify** (no gtd pre-check; gitsigns' own "no
+current hunk" message is adequate). Confirm or request a gtd pre-check:
+
+<!-- user answers here -->
 
 ## Plan body
 
-Assumes: Q1=(b) working-tree file content, Q2=cursor-anchored auto-sized float,
-Q7=(i) self-contained float (gitsigns NOT used for the content preview),
-Q4=no-op on heading, Q5=source-file filetype for syntax, Q6=`preview_hunk`
-buffer-local, Q8 defaults (±10 ctx, clamp, notify-on-missing, anchor highlight).
+Assumes: Q7=(ii) gitsigns diff preview; Q9=`<leader>k` does what `gd` does then
+auto-pops the gitsigns hunk-preview float (leaves REVIEW.md); Q10=the
+distinction from `gd` is exactly the auto-popped float; Q11=reuse
+`open_file_diff`'s global `change_base`; Q12=let gitsigns notify on no-hunk;
+Q4=no-op on heading; Q6= `preview_hunk` buffer-local in REVIEW.md.
 
 ### New: `review.preview_hunk_under_cursor()` in `lua/gtd/review.lua`
 
-- Parse the hunk line under cursor with `parse_hunk_line` (reuse). If nil →
+- Parse the hunk line under the cursor with `parse_hunk_line` (reuse). If nil →
   notify "no hunk on current line" and return (Q4 no-op), mirroring
   `jump_to_hunk_under_cursor` / `toggle_done`.
-- Resolve repo root via `git.get_root()`. If nil → error notify.
-- Build the absolute path (`root .. "/" .. hunk.path`). Read the working-tree
-  file content:
-  - Prefer an already-loaded buffer for that path (`vim.fn.bufnr(abs_path)`);
-    else `vim.fn.readfile(abs_path)`.
-  - If the file does not exist / unreadable → notify "file not found" + abort
-    (Q8).
-- Determine the context window: `lnum = hunk.lnum`; if `lnum < 1` or
-  `lnum > #file_lines` → notify "line out of range" + abort (Q8). Else
-  `start = max(1, lnum - 10)`, `finish = min(#file_lines, lnum + 10)`; slice
-  those lines (Q8 clamp).
-- No more `git.diff_hunk` helper is needed (this is file content, not a diff).
-  gitsigns is NOT called.
-- Build a scratch buffer (`nvim_create_buf(false, true)`), set lines to the
-  sliced context, set `modifiable=false`.
-- Set the float buffer filetype to the SOURCE FILE's filetype so it highlights
-  as code (Q5): derive via `vim.filetype.match({ filename = abs_path })` (fall
-  back to matching on `buf`/`contents` if needed), set `bo[buf].filetype`.
-- Highlight the anchor line (Q8): the anchor's 0-based row in the scratch buffer
-  is `lnum - start`; apply a `CursorLine`-like highlight to that row via
-  `nvim_buf_add_highlight` (e.g. an `hl_group` of `CursorLine` / a small custom
-  group) across the whole line.
-- Open a floating window anchored at cursor (Q2): `relative="cursor"`,
-  `row=1, col=0`, size = min(content, max) with max height ~20 and max width
-  ~100 (width from longest sliced line), `border="rounded"`, `style="minimal"`.
-- Register dismissal (Q2): one-shot `CursorMoved` autocmd in REVIEW.md to close
-  the float, plus buffer-local `q` / `<Esc>` maps in the float buffer.
-- Track the open float win id in a module-local so a repeated `<leader>k` closes
-  the previous float first, then re-opens for the new line (no orphan floats)
-  (Q2).
+- Resolve the review base exactly as `jump_to_hunk_under_cursor` does:
+  `review_path = git.get_review_path()`, `base = git.get_base(review_path)`. If
+  nil → notify "could not resolve review base" + return.
+- **Require gitsigns up front** (it is only a soft dependency elsewhere): if
+  `pcall(require, "gitsigns")` fails (or `gs.preview_hunk` is absent) → notify
+  "gtd: gitsigns required for preview" + abort (do NOT open the file). This is a
+  deliberate change from `open_file_diff`, which silently skips gitsigns.
+- Open the file via the existing `M.open_file_diff(hunk, base)`: this sets the
+  global gitsigns base (Q11), `:edit`s the target file (Q9 — we leave
+  REVIEW.md), and positions the cursor at `hunk.lnum`. We reuse it verbatim so
+  `<leader>k` and `gd` share one open path.
+- After the file is open and the cursor is on `hunk.lnum`, call
+  `gitsigns.preview_hunk()` so the diff float pops automatically. gitsigns may
+  need a moment after `:edit` to attach + apply the base; call inside a
+  `vim.schedule(...)` (and/or `defer_fn`) so attach + signs are in place before
+  the preview, then `pcall` the `preview_hunk` call so a transient failure just
+  no-ops rather than erroring.
+- If the cursor line is not inside a tracked hunk, gitsigns itself notifies "no
+  current hunk" (Q12) — no gtd pre-check.
+
+Net effect: `<leader>k` is "`gd`, then the gitsigns hunk-diff float is shown
+automatically". No self-contained float, no `vim.filetype.match`, no manual
+context slicing, no anchor highlight, no `CursorMoved` dismissal logic —
+gitsigns owns the float and its lifecycle (it closes on the next cursor move /
+its own maps). The earlier file-content machinery (Q1=b / Q8) is dropped.
 
 ### Wiring: `lua/gtd/init.lua`
 
@@ -122,43 +118,58 @@ buffer-local, Q8 defaults (±10 ctx, clamp, notify-on-missing, anchor highlight)
 
 ### Tests: `tests/test_review_preview.lua` (new)
 
-- `preview_hunk_under_cursor`: in a fake REVIEW.md buffer with the cursor on a
-  hunk line pointing at a temp source file, assert a float window opens with the
-  expected sliced lines (±10 around `lnum`, clamped at edges) and the source
-  file's `filetype` set.
-- Assert the anchor row carries the highlight (inspect extmarks/highlights at
-  `lnum - start`).
-- Assert no-op + notify when the cursor is on a `## chunk` heading (Q4),
-  mirroring `tests/test_review_jump.lua` patterns.
-- Assert notify + no float when the source file is missing and when `lnum` is
-  out of range (Q8).
+Mirror `tests/test_review_jump.lua`'s stubbing style (stub helper,
+`with_fake_root`), and additionally STUB gitsigns since the flow now depends on
+it:
+
+- Stub `package.loaded["gitsigns"]` (or inject a fake via the same `require`
+  gitsigns returns) with a table exposing `change_base` and `preview_hunk`
+  spies.
+- `preview_hunk_under_cursor` happy path: cursor on a hunk line in a fake
+  REVIEW.md buffer; stub `git.get_root` / `git.get_base`, intercept `vim.cmd`
+  and cursor APIs (as the jump test does). Assert that:
+  - the file was `:edit`ed at the expected root-relative path (i.e.
+    `open_file_diff` behaviour),
+  - the cursor was positioned at `hunk.lnum`,
+  - `gitsigns.change_base` was called with the base and global=`true`,
+  - `gitsigns.preview_hunk` was invoked (flush any `vim.schedule`/`defer_fn` in
+    the test, e.g. `vim.wait`).
+- No-op + notify when the cursor is on a `## chunk` heading (Q4), mirroring
+  `tests/test_review_jump.lua`.
+- gitsigns missing: with `require("gitsigns")` forced to fail (or `preview_hunk`
+  absent), assert notify "gitsigns required" AND that NO file was opened
+  (`vim.cmd` edit not called).
+- No assertion about "no current hunk" handling — that path is gitsigns' own
+  notify (Q12), out of gtd's control.
 
 ### README
 
-- Document the `<leader>k` preview map and the `preview_hunk` config key, and
-  keep the README keymap table in sync (required).
+- Document the `<leader>k` preview map and the `preview_hunk` config key.
+- State clearly that `<leader>k` opens the referenced file (like `gd`) and then
+  pops a gitsigns hunk-diff preview float, and that it **requires gitsigns**
+  (unlike the rest of the plugin, where gitsigns is optional).
+- Keep the README keymap table in sync (required).
 
 ## Resolved
 
 ### Q1 — What does the preview SHOW?
 
-**Answer:** (b) current file content — N working-tree context lines centred on
-`hunk.lnum` (±10), anchor line highlighted. NOT a git diff. No `git.diff_hunk`
-helper; read the working tree directly (`vim.fn.readfile` or the buffer).
+**Answer:** (b) file content — BUT this is now OVERRIDDEN by Q7=(ii). The
+preview shows the **gitsigns diff hunk** (diff against the review base), not
+working-tree file content. No file-content slicing, no `git.diff_hunk` helper.
 
 ### Q2 — Presentation and dismissal
 
-**Answer:** agreed — cursor-anchored, auto-sized float (max ~20 rows / ~100
-cols), closed on the next `CursorMoved` in REVIEW.md or `q` / `<Esc>` when focus
-is in the float; repeated `<leader>k` re-opens for the new line.
+**Answer:** superseded by Q7=(ii). The float is produced and owned entirely by
+gitsigns' `preview_hunk` (its own sizing, border, and dismissal — closes on the
+next cursor move / gitsigns' own maps). gtd no longer builds a cursor-anchored
+float or wires `CursorMoved`/`q`/`<Esc>` dismissal.
 
 ### Q3 — Implementation dependency
 
-**Answer:** use gitsigns — BUT this conflicts with Q1=b (see open Q7). gitsigns
-cannot render plain file content for a `path#lnum` reference; its preview APIs
-show a diff of the currently-open buffer. Conflict surfaced as Q7; plan body
-defaults to a self-contained float (gitsigns not used for the content preview)
-pending confirmation.
+**Answer:** use gitsigns — now HONOURED (Q7=ii). The preview delegates to
+gitsigns' `preview_hunk`. gitsigns is consequently a HARD requirement for this
+one feature: if absent, `<leader>k` notifies + aborts.
 
 ### Q4 — Cursor on a `## chunk` heading
 
@@ -167,11 +178,27 @@ line" behaviour.
 
 ### Q5 — Syntax highlighting in the preview buffer
 
-**Answer:** agreed — since Q1=b, set the float buffer filetype to the SOURCE
-file's filetype (via `vim.filetype.match`) so it highlights as code.
+**Answer:** superseded by Q7=(ii). Highlighting is whatever gitsigns'
+`preview_hunk` renders — a diff-style float — not the source file's filetype.
+gtd does not set a filetype or call `vim.filetype.match`.
 
 ### Q6 — Config key name
 
 **Answer:** agreed — `preview_hunk = "<leader>k"`, registered buffer-local in
 REVIEW.md (in `M.setup_buffer_keymaps`, beside `jump_to_hunk`); NOT a global
 map.
+
+### Q7 — CONFLICT resolution: file content vs gitsigns
+
+**Answer:** (ii) gitsigns diff preview. This OVERRIDES Q1=(b) "file content".
+The preview opens the target file (as `gd` does via `open_file_diff`), then
+calls gitsigns' `preview_hunk` to pop the diff-hunk float. Reinterprets Q1/Q2/Q5
+as above; honours Q3 ("use gitsigns").
+
+### Q8 — Anchor-line edge cases
+
+**Answer:** agreed in spirit, but mostly MOOT under Q7=(ii). Q8's ±10 context
+window, edge clamping, and anchor highlight were written for the file-content
+float (option i) — gitsigns renders the diff itself, so none of that applies.
+Still applicable: missing file / out-of-range `lnum` → notify + abort (handled
+by `open_file_diff`'s existing best-effort guards and the base/gitsigns checks).
