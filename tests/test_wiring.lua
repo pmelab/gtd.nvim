@@ -57,12 +57,12 @@ T["config is accessible after setup"] = function()
   MiniTest.expect.equality(type(gtd.config.keys), "table")
 end
 
-T["lazy_keys returns a table with 2 entries"] = function()
+T["lazy_keys returns a table with 5 entries"] = function()
   local gtd = require("gtd")
   gtd.setup({})
   local spec = gtd.lazy_keys()
   MiniTest.expect.equality(type(spec), "table")
-  MiniTest.expect.equality(#spec, 3)
+  MiniTest.expect.equality(#spec, 5)
 end
 
 T["setup_buffer_keymaps attaches gd in REVIEW.md"] = function()

@@ -26,6 +26,8 @@ With key overrides:
     keys = {
       pick_open_questions = "<leader>gq",  -- global: open question picker
       pick_chunks         = "<leader>gp",  -- global: review chunk picker
+      open_todo           = "<leader>gt",  -- global: open/refresh TODO.md
+      open_review         = "<leader>gr",  -- global: open/refresh REVIEW.md
       jump_to_hunk        = "gd",          -- REVIEW.md buffer-local
       toggle_done         = "<leader>gc",  -- REVIEW.md buffer-local
       toggle_done_cr      = "<cr>",        -- REVIEW.md buffer-local
@@ -60,6 +62,7 @@ require("gtd").setup({
 | Auto-refresh | Count refreshed on `BufWritePost TODO.md`, `FocusGained`, and every 5 minutes |
 | Optional integrations | `mini.icons` and `which-key` registered when present (no hard dependency) |
 | Copy file location | Copies `path:line` of the cursor to the system clipboard for pasting into an AI agent |
+| Open/refresh TODO & REVIEW | `<leader>gt` / `<leader>gr` open the file (or focus its window) and reload it from disk |
 
 ## Keymaps
 
@@ -67,6 +70,8 @@ require("gtd").setup({
 |---|---|---|
 | `<leader>gq` | global | Pick open question and jump to it |
 | `<leader>gp` | global | Pick review chunk and jump to it |
+| `<leader>gt` | global | Open/refresh `TODO.md` |
+| `<leader>gr` | global | Open/refresh `REVIEW.md` |
 | `<leader>gy` | global | Copy current `file:line` to system clipboard |
 | `gd` | `REVIEW.md` | Jump to hunk under cursor in source file |
 | `<leader>gc` | `REVIEW.md` | Toggle checkbox done on hunk under cursor |

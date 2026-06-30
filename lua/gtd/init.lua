@@ -8,6 +8,8 @@ local defaults = {
     toggle_done = "<leader>gc",
     toggle_done_cr = "<cr>",
     copy_location = "<leader>gy",
+    open_todo = "<leader>gt",
+    open_review = "<leader>gr",
   },
 }
 
@@ -94,6 +96,52 @@ function M.setup_autocmds()
   end
 end
 
+--- Open path in a window (focus existing or :edit), then force-reload from disk.
+--- Saves first if the buffer has unsaved changes.
+--- @param path string absolute file path
+local function open_or_focus_reload(path)
+  local bufnr = vim.fn.bufnr(path)
+  local win = bufnr ~= -1 and vim.fn.bufwinid(bufnr) or -1
+  if win ~= -1 then
+    vim.api.nvim_set_current_win(win)
+  else
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
+  end
+  -- re-resolve after potential window/buffer switch
+  bufnr = vim.fn.bufnr(path)
+  if bufnr ~= -1 and vim.bo[bufnr].modified then
+    vim.cmd("write")
+  end
+  vim.cmd("edit!")
+end
+
+--- Open (or focus and reload) TODO.md for the current git repo.
+function M.open_or_refresh_todo()
+  local git = require("gtd.git")
+  local path = git.get_todo_path()
+  if not path then
+    vim.notify("gtd: no TODO.md found (not in a git repo)", vim.log.levels.WARN)
+    return
+  end
+  if vim.fn.filereadable(path) == 0 then
+    vim.notify("gtd: no TODO.md found", vim.log.levels.WARN)
+    return
+  end
+  open_or_focus_reload(path)
+  require("gtd.todo").refresh_count()
+end
+
+--- Open (or focus and reload) REVIEW.md for the current git repo.
+function M.open_or_refresh_review()
+  local git = require("gtd.git")
+  local path = git.get_review_path()
+  if not path or vim.fn.filereadable(path) == 0 then
+    vim.notify("gtd: no REVIEW.md (run a review first)", vim.log.levels.WARN)
+    return
+  end
+  open_or_focus_reload(path)
+end
+
 --- Copy current buffer path:line to the system clipboard.
 --- Returns the copied string, or nil if the buffer has no file name.
 function M.copy_location()
@@ -159,6 +207,14 @@ function M.setup(opts)
     M.copy_location()
   end, { desc = "gtd: copy file:line to clipboard" })
 
+  vim.keymap.set("n", keys.open_todo, function()
+    M.open_or_refresh_todo()
+  end, { desc = "gtd: open/refresh TODO.md" })
+
+  vim.keymap.set("n", keys.open_review, function()
+    M.open_or_refresh_review()
+  end, { desc = "gtd: open/refresh REVIEW.md" })
+
   -- Autocmds
   M.setup_autocmds()
 
@@ -182,6 +238,8 @@ function M.lazy_keys()
     { keys.pick_open_questions, function() require("gtd.todo").pick_open_questions() end, desc = "gtd: pick open questions" },
     { keys.pick_chunks, function() require("gtd.review").pick_chunks() end, desc = "gtd: pick review chunks" },
     { keys.copy_location, function() require("gtd").copy_location() end, desc = "gtd: copy file:line to clipboard" },
+    { keys.open_todo, function() require("gtd").open_or_refresh_todo() end, desc = "gtd: open/refresh TODO.md" },
+    { keys.open_review, function() require("gtd").open_or_refresh_review() end, desc = "gtd: open/refresh REVIEW.md" },
   }
 end
 
