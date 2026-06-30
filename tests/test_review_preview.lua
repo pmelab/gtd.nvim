@@ -29,13 +29,18 @@ local function make_review_win(lines)
   return buf, win
 end
 
---- Find a float window (relative == "cursor") among current windows.
---- Returns window id or nil.
-local function find_float_win()
+--- Find a float window anchored to cursor or win among current windows,
+--- excluding windows in the provided set. Returns window id or nil.
+--- NOTE: In headless Neovim, relative="cursor" is reported as relative="win",
+--- so we match on any non-empty relative (i.e. any float) that is not a
+--- pre-existing window.
+local function find_new_float_win(existing_set)
   for _, w in ipairs(vim.api.nvim_list_wins()) do
-    local cfg = vim.api.nvim_win_get_config(w)
-    if cfg.relative == "cursor" then
-      return w
+    if not existing_set[w] then
+      local cfg = vim.api.nvim_win_get_config(w)
+      if cfg.relative ~= "" then
+        return w
+      end
     end
   end
   return nil
@@ -63,21 +68,26 @@ T["preview_hunk_under_cursor opens a cursor-relative float with diff content"] =
   local r3 = stub(git, "diff_hunk", function(_, _, _) return fake_diff end)
 
   local wins_before = vim.api.nvim_list_wins()
+  local wins_before_set = {}
+  for _, w in ipairs(wins_before) do wins_before_set[w] = true end
 
   local ok, err = pcall(function()
     review.preview_hunk_under_cursor()
   end)
 
-  -- find float before cleanup
-  local float_win = find_float_win()
+  -- find the new float window (the diff preview)
+  local float_win = find_new_float_win(wins_before_set)
   local float_buf = float_win and vim.api.nvim_win_get_buf(float_win)
   local float_lines = float_buf and vim.api.nvim_buf_get_lines(float_buf, 0, -1, false)
   local float_ft = float_buf and vim.bo[float_buf].filetype
   local current_win_after = vim.api.nvim_get_current_win()
 
-  -- cleanup
-  if float_win and vim.api.nvim_win_is_valid(float_win) then
-    vim.api.nvim_win_close(float_win, true)
+  -- cleanup: close ALL new windows opened since wins_before (handles bordered
+  -- floats that create an extra window), then close review_win
+  for _, w in ipairs(vim.api.nvim_list_wins()) do
+    if not wins_before_set[w] and vim.api.nvim_win_is_valid(w) then
+      pcall(vim.api.nvim_win_close, w, true)
+    end
   end
   vim.api.nvim_win_close(review_win, true)
   vim.api.nvim_buf_delete(buf, { force = true })
@@ -85,8 +95,8 @@ T["preview_hunk_under_cursor opens a cursor-relative float with diff content"] =
 
   assert(ok, "preview_hunk_under_cursor should not error: " .. tostring(err))
 
-  -- a new window appeared
-  MiniTest.expect.equality(#vim.api.nvim_list_wins(), #wins_before - 1) -- float closed, review closed
+  -- all new windows closed, plus review_win: net change is -1 from wins_before
+  MiniTest.expect.equality(#vim.api.nvim_list_wins(), #wins_before - 1) -- float(s) closed, review closed
 
   MiniTest.expect.no_equality(float_win, nil)
   MiniTest.expect.no_equality(float_lines, nil)
