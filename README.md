@@ -29,6 +29,7 @@ With key overrides:
       open_todo           = "<leader>gt",  -- global: open/refresh TODO.md
       open_review         = "<leader>gr",  -- global: open/refresh REVIEW.md
       jump_to_hunk        = "gd",          -- REVIEW.md buffer-local
+      preview_hunk        = "<leader>k",   -- REVIEW.md buffer-local
       toggle_done         = "<leader>gc",  -- REVIEW.md buffer-local
       toggle_done_cr      = "<cr>",        -- REVIEW.md buffer-local
       copy_location       = "<leader>gy",  -- global: copy file:line to clipboard
@@ -58,6 +59,7 @@ require("gtd").setup({
 | Diagnostics in TODO.md | WARN diagnostics on each unanswered `### ` heading |
 | Review chunk picker | `vim.ui.select` over `## ` sections in `REVIEW.md` |
 | Jump to hunk | Opens the source file at the hunk line from a `REVIEW.md` checkbox entry |
+| Quick diff-hunk preview | Floats the diff hunk at the cursor in `REVIEW.md` without leaving the buffer; gtd computes the diff itself — no gitsigns required |
 | Toggle checkbox | Toggle `- [ ]` / `- [x]` on a hunk line and write the file |
 | Auto-refresh | Count refreshed on `BufWritePost TODO.md`, `FocusGained`, and every 5 minutes |
 | Optional integrations | `mini.icons` and `which-key` registered when present (no hard dependency) |
@@ -74,6 +76,7 @@ require("gtd").setup({
 | `<leader>gr` | global | Open/refresh `REVIEW.md` |
 | `<leader>gy` | global | Copy current `file:line` to system clipboard |
 | `gd` | `REVIEW.md` | Jump to hunk under cursor in source file |
+| `<leader>k` | `REVIEW.md` | Preview the diff hunk under the cursor in a float (stays in REVIEW.md) |
 | `<leader>gc` | `REVIEW.md` | Toggle checkbox done on hunk under cursor |
 | `<cr>` | `REVIEW.md` | Toggle checkbox done on hunk under cursor |
 

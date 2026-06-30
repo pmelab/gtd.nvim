@@ -7,6 +7,7 @@ local defaults = {
     jump_to_hunk = "gd",
     toggle_done = "<leader>gc",
     toggle_done_cr = "<cr>",
+    preview_hunk = "<leader>k",
     copy_location = "<leader>gy",
     open_todo = "<leader>gt",
     open_review = "<leader>gr",
@@ -43,6 +44,11 @@ function M.setup_buffer_keymaps(bufnr, fname)
       vim.keymap.set("n", keys.toggle_done_cr, function()
         review.toggle_done()
       end, { buffer = bufnr, desc = "gtd: toggle hunk done (<cr>)" })
+    end
+    if keys.preview_hunk then
+      vim.keymap.set("n", keys.preview_hunk, function()
+        review.preview_hunk_under_cursor()
+      end, { buffer = bufnr, desc = "gtd: preview hunk under cursor" })
     end
   end
   if fname:match(".*/TODO%.md$") then
